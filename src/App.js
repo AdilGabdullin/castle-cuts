@@ -1,43 +1,24 @@
-const h = React.createElement;
+import React, { useState } from "react";
+import Form from "./Form";
+import Svg from "./Svg";
+import mapValues from "lodash-es/mapValues";
 
-function initStore(defaultValues) {
-  const state = {};
-  for (const [name, value] of Object.entries(defaultValues)) {
-    state[name] = { value, valid: !isNaN(+value) };
-  }
-  const store = Redux.createStore(reducer, state);
-  store.subscribe(render);
-  return store;
-}
+export default function App({ values }) {
+  const initState = mapValues(values, (v) => ({ value: v, valid: !isNaN(+v) })),
+    [state, setState] = useState(initState),
+    onChange = ({ target }) => {
+      const { name, value } = target;
+      setState({ ...state, [name]: { value, valid: !isNaN(+value) } });
+    },
+    { d, multiplier, svgProps } = evalParams(state),
+    formProps = { ...state, d, multiplier, onChange };
 
-function reducer(state, action) {
-  switch (action.type) {
-    case "CHANGE_INPUT_VALUE":
-      const { name, value } = action;
-      return { ...state, [name]: { value, valid: !isNaN(+value) } };
-    default:
-      return state;
-  }
-}
-
-function render() {
-  const state = store.getState(),
-    { d, multiplier, svg } = evalParams(state);
-
-  ReactDOM.render(
-    h(
-      "div",
-      { className: "container" },
-      Form({ ...state, d, multiplier, onChange }),
-      h("div", { className: "mt-3" }, Svg(svg))
-    ),
-    document.getElementById("react-root")
+  return (
+    <>
+      <Form {...formProps} />
+      <Svg {...svgProps} />
+    </>
   );
-}
-
-function onChange(event) {
-  const { name, value } = event.target;
-  store.dispatch({ type: "CHANGE_INPUT_VALUE", name, value });
 }
 
 function evalParams(state) {
@@ -269,5 +250,5 @@ function evalParams(state) {
     y: ey3 + letterSize * 1.5 - 2,
     text: `E(${(e / m).toFixed(0)}")`,
   });
-  return { d, multiplier: m, svg };
+  return { d, multiplier: m, svgProps: svg };
 }
